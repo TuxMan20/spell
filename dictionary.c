@@ -7,12 +7,12 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include <strings.h>
 
 
 #include "dictionary.h"
 
-
-
+unsigned int dictSize = 0;
 
 /**
  * Returns a numeric value, a hash function, based on the current word
@@ -34,7 +34,24 @@ unsigned int hash(const char *word)
  */
 bool check(const char *word)
 {
-    // TODO
+    int index = hash(word);
+
+    node_t *ptr = hashTable[index];
+
+    if (ptr == NULL) { return false; }
+
+    do
+    {
+        if (strcasecmp(word, ptr->word) == 0)
+        {
+            return true;
+        }
+        else
+        {
+            ptr = ptr->next;
+        }
+    } while (ptr != NULL);
+
     return false;
 }
 
@@ -53,9 +70,11 @@ bool load(const char *dictionary)
     {
         char word[LENGTH + 1];
 
-        while(fscanf(dp, "%s", word) != EOF);
+
+        while(fscanf(dp, "%s\n", word) != EOF)
         {
-            node_t *new_node = malloc(sizeof(node_t));
+            node_t *new_node = calloc(1, sizeof(node_t)); //I changed malloc() to calloc()
+            //https://stackoverflow.com/questions/30034665/initializing-an-array-of-pointers-to-null//
             if (new_node == NULL)
             {
                 unload();
@@ -65,6 +84,7 @@ bool load(const char *dictionary)
             {
                 strcpy(new_node->word, word);
                 index = hash(new_node->word);
+                dictSize = dictSize + 1;
 
                 if (hashTable[index] == NULL)
                 {
@@ -76,26 +96,26 @@ bool load(const char *dictionary)
                     hashTable[index]->next = new_node;
                 }
 
-                printf("%s\n", hashTable[index]); // Test to make sure it gets printed
             }
-            fclose(dp);
-            return true;
+
 
         }
-
+        fclose(dp);
+        return true;
     }
-
     return false;
-
 }
+
+
+
+
 
 /**
  * Returns number of words in dictionary if loaded else 0 if not yet loaded.
  */
 unsigned int size(void)
 {
-    // TODO
-    return 0;
+    return dictSize;
 }
 
 /**
@@ -103,6 +123,17 @@ unsigned int size(void)
  */
 bool unload(void)
 {
-    //free()
-    return false;
+    for (int i = 0; i < HASH_SIZE; i++)
+    {
+        node_t *ptr = hashTable[i];
+
+        while (ptr != NULL)
+        {
+            node_t *temp = ptr;
+            ptr = ptr->next;
+            free(temp);
+        }
+    }
+   return true;
+
 }
